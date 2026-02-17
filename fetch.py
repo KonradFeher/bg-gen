@@ -53,7 +53,7 @@ def from_csv(file):
                 print(e)
 
         out = args.output
-        with open(out, 'w') as f:
+        with open(out + '.json', 'w') as f:
             f.write(json.dumps(info_responses))
 
     img_gen.gen_images(out)
@@ -83,7 +83,7 @@ def top_albums():
                     "name": a['name']
                 })
         
-    with open(args.output, 'w') as f:
+    with open(args.output + '.json', 'w') as f:
         f.write(json.dumps(info_responses))
 
 if __name__=="__main__":
@@ -91,9 +91,13 @@ if __name__=="__main__":
     parser.add_argument('--user', required=False)
     parser.add_argument('--limit', required=False, default=1000)
     parser.add_argument('--file', required=False)
-    parser.add_argument('--output', required=False, default=('output/' + str(datetime.now().timestamp()) + '.json'))
+    parser.add_argument('--output', required=False, default=('output/' + str(datetime.now().timestamp() // 1) + '.json'))
+    parser.add_argument('--resolution', required=False, default=2560)
     parser.add_argument('--gen', action='store_true')
+    parser.add_argument('--zip', action='store_true')
     args = parser.parse_args()
+
+    args.output = args.output.split('.')[0]
 
     if args.user is not None:    
         top_albums()
@@ -103,4 +107,4 @@ if __name__=="__main__":
 
     if args.gen:
         print("Fetch done. Generating images.")
-        img_gen.gen_images(args.output)
+        img_gen.gen_images(args.output + '.json', args.resolution, args.output, args.limit, args.zip)

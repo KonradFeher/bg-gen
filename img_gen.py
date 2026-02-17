@@ -1,3 +1,4 @@
+import subprocess
 import requests
 import os
 import sys
@@ -38,19 +39,23 @@ def add_shadow(background, foreground, blur_radius=20, shadow_opacity=160):
     return background
 
 
-def gen_images(file_name, res=2560, out="output_images", limit=-1):
-    limit = limit
+def gen_images(file_name, res=2560, out="output_images", limit=-1, zip=False):
+    os.makedirs(out, exist_ok=True)
+
+    limit = int(limit)
     count = 0
     with open(file_name, "r") as f:
         records = json.load(f)
 
+        filenames = list()
         for record in records:
             if limit > 0 and count > limit: break
             count += 1 
             # filename = (record["mbid"] if record["mbid"] != '' else (f"{record["artist"]}-{record["name"]}"))
             filename = f"{record["artist"]}-{record["name"]}"
-            if os.path.exists("./output_images/" + filename + ".png"):
+            if os.path.exists(f"{out}/" + filename + ".png"):
                 print(f"{record["artist"]} - {record["name"]} exists already, skipping.")
+                filenames.append(f"{out}/{filename}.png")
                 continue
             print(f"Generating {record["artist"]} - {record["name"]}")
             try:
@@ -71,9 +76,14 @@ def gen_images(file_name, res=2560, out="output_images", limit=-1):
 
                 add_shadow(background, foreground)
                 background.save(f"{out}/{filename}.png", quality=95)
+                filenames.append(f"{out}/{filename}.png")
             except Exception as e:
                 print(f"ERROR: {e} ")
                 print("faulty image: " + record["image"])
+
+        if zip:
+            filenames = [os.path.abspath(f) for f in filenames]
+            subprocess.run(["zip", "-j", f"{out}.zip"] + filenames)
 
 
 if __name__ == "__main__":
@@ -82,5 +92,6 @@ if __name__ == "__main__":
     parser.add_argument('--output', required=False, default='output_images')
     parser.add_argument('--limit', required=False, default=-1)
     parser.add_argument('--resolution', required=False, default=2560)
+    parser.add_argument('--zip', action='store_true')
     args = parser.parse_args()
-    gen_images(args.input)
+    gen_images(args.input, args.resolution, args.output, args.limit, args.zip)
